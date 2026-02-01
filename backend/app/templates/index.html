@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EndeeSync - Local RAG-based Semantic Memory Engine">
+    <meta name="theme-color" content="#0a0a0f">
+
+    <title>{{ app_name }} - Semantic Memory Engine</title>
+
+    <!-- Favicon -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+
+    <!-- Fonts - Inter + Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body class="antialiased">
+    <!-- Aurora Background -->
+    <div class="aurora-bg" aria-hidden="true">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+    </div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <div class="app" id="app">
+        <!-- ===== Sidebar Navigation ===== -->
+        <aside class="sidebar" role="navigation" aria-label="Main navigation">
+            <div class="sidebar-header">
+                <a href="/" class="logo">
+                    <span class="logo-icon" aria-hidden="true">🧠</span>
+                    <span class="logo-text">ENDEESYNC</span>
+                </a>
+                <span class="version">v{{ app_version }}</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-section="query" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">💬</span>
+                    <span>Ask</span>
+                </button>
+                <button class="nav-btn" data-section="notes">
+                    <span class="nav-icon" aria-hidden="true">📝</span>
+                    <span>Notes</span>
+                </button>
+                <button class="nav-btn" data-section="search">
+                    <span class="nav-icon" aria-hidden="true">🔍</span>
+                    <span>Search</span>
+                </button>
+                <button class="nav-btn" data-section="summarize">
+                    <span class="nav-icon" aria-hidden="true">📊</span>
+                    <span>Summarize</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status" id="health-status" role="status" aria-live="polite">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== Main Content ===== -->
+        <main class="main" role="main">
+
+            <!-- Query Section -->
+            <section class="section active" id="section-query" aria-labelledby="query-heading">
+                <header class="section-header">
+                    <div class="section-badge">
+                        <span class="badge-dot"></span>
+                        RAG-POWERED
+                    </div>
+                    <h1 id="query-heading" class="section-title">Ask Your <span
+                            class="text-gradient-orange">Memory</span></h1>
+                    <p class="subtitle">Get AI-powered answers from your stored notes with source citations</p>
+                </header>
+
+                <div class="card glass">
+                    <form id="query-form" class="form">
+                        <div class="form-group">
+                            <label for="query-input">Your Question</label>
+                            <textarea id="query-input" placeholder="What did I learn about..." rows="3" required
+                                aria-describedby="query-help"></textarea>
+                            <small id="query-help" class="form-help">Ask anything about your stored notes</small>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="query-tags">Filter by Tags</label>
+                                <input type="text" id="query-tags" placeholder="ml, backend (optional)">
+                            </div>
+                            <div class="form-group">
+                                <label for="query-topk">Context Chunks</label>
+                                <input type="number" id="query-topk" value="5" min="1" max="20">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Ask Question</span>
+                            <span class="btn-spinner hidden" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <div id="query-results" class="results hidden" aria-live="polite">
+                    <div class="card glass result-card">
+                        <div class="result-header">
+                            <h2>Answer</h2>
+                            <div class="metrics" id="query-metrics"></div>
+                        </div>
+                        <div class="result-content" id="query-answer"></div>
+                    </div>
+                    <div class="sources-section">
+                        <h3>Sources</h3>
+                        <div id="query-sources" class="sources-grid"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notes Section -->
+            <section class="section" id="section-notes" aria-labelledby="notes-heading">
+                <header class="section-header">
+                    <div class="section-badge">
+                        <span class="badge-dot"></span>
+                        KNOWLEDGE BASE
+                    </div>
+                    <h1 id="notes-heading" class="section-title">Add <span class="text-gradient-orange">Notes</span>
+                    </h1>
+                    <p class="subtitle">Store knowledge for semantic retrieval and AI-powered recall</p>
+                </header>
+
+                <div class="cards-grid">
+                    <!-- Text Note Card -->
+                    <div class="card glass">
+                        <h2 class="card-title">📄 Text Note</h2>
+                        <form id="note-form" class="form">
+                            <div class="form-group">
+                                <label for="note-title">Title / Source</label>
+                                <input type="text" id="note-title" placeholder="meeting_notes">
+                            </div>
+                            <div class="form-group">
+                                <label for="note-content">Content</label>
+                                <textarea id="note-content" placeholder="Enter your note here..." rows="5"
+                                    required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="note-tags">Tags</label>
+                                <input type="text" id="note-tags" placeholder="work, ideas, ml">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-text">Save Note</span>
+                                <span class="btn-spinner hidden" aria-hidden="true"></span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- File Upload Card -->
+                    <div class="card glass">
+                        <h2 class="card-title">📁 Upload File</h2>
+                        <form id="upload-form" class="form">
+                            <div class="form-group">
+                                <label for="file-input">File (.txt, .md)</label>
+                                <div class="file-drop" id="file-drop" role="button" tabindex="0"
+                                    aria-describedby="file-help">
+                                    <input type="file" id="file-input" accept=".txt,.md" hidden>
+                                    <div class="file-drop-content">
+                                        <span class="file-icon" aria-hidden="true">📄</span>
+                                        <span class="file-text">Drop file or click to upload</span>
+                                        <span class="file-name" id="file-name"></span>
+                                    </div>
+                                </div>
+                                <small id="file-help" class="form-help">Supports .txt and .md files</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="upload-tags">Tags</label>
+                                <input type="text" id="upload-tags" placeholder="document, reference">
+                            </div>
+                            <button type="submit" class="btn btn-primary" disabled id="upload-btn">
+                                <span class="btn-text">Upload File</span>
+                                <span class="btn-spinner hidden" aria-hidden="true"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Recent Notes List -->
+                <div class="card glass">
+                    <div class="card-header">
+                        <h2 class="card-title">Recent Notes</h2>
+                        <button class="btn btn-ghost" id="refresh-notes" aria-label="Refresh notes list">
+                            ↻ Refresh
+                        </button>
+                    </div>
+                    <div id="notes-list" class="notes-list" role="list" aria-live="polite">
+                        <div class="loading-placeholder">Loading notes...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search Section -->
+            <section class="section" id="section-search" aria-labelledby="search-heading">
+                <header class="section-header">
+                    <div class="section-badge">
+                        <span class="badge-dot"></span>
+                        VECTOR SEARCH
+                    </div>
+                    <h1 id="search-heading" class="section-title">Semantic <span
+                            class="text-gradient-orange">Search</span></h1>
+                    <p class="subtitle">Find notes by meaning, not just keywords — powered by embeddings</p>
+                </header>
+
+                <div class="card glass">
+                    <form id="search-form" class="form">
+                        <div class="form-group">
+                            <label for="search-input">Search Query</label>
+                            <input type="text" id="search-input" placeholder="Search for concepts, ideas..." required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="search-tags">Filter by Tags</label>
+                                <input type="text" id="search-tags" placeholder="optional">
+                            </div>
+                            <div class="form-group">
+                                <label for="search-limit">Max Results</label>
+                                <input type="number" id="search-limit" value="10" min="1" max="50">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Search</span>
+                            <span class="btn-spinner hidden" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <div id="search-results" class="results hidden" aria-live="polite">
+                    <div class="card glass">
+                        <div class="result-header">
+                            <h2>Results</h2>
+                            <div class="metrics" id="search-metrics"></div>
+                        </div>
+                        <div id="search-items" class="search-results-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Summarize Section -->
+            <section class="section" id="section-summarize" aria-labelledby="summarize-heading">
+                <header class="section-header">
+                    <div class="section-badge">
+                        <span class="badge-dot"></span>
+                        AI SYNTHESIS
+                    </div>
+                    <h1 id="summarize-heading" class="section-title"><span class="text-gradient-orange">Summarize</span>
+                    </h1>
+                    <p class="subtitle">Generate AI-powered summaries across your stored knowledge</p>
+                </header>
+
+                <div class="card glass">
+                    <form id="summarize-form" class="form">
+                        <div class="form-group">
+                            <label for="summarize-topic">Topic</label>
+                            <input type="text" id="summarize-topic"
+                                placeholder="What topic to summarize? e.g., machine learning" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="summarize-tags">Filter by Tags</label>
+                                <input type="text" id="summarize-tags" placeholder="optional">
+                            </div>
+                            <div class="form-group">
+                                <label for="summarize-topk">Source Chunks</label>
+                                <input type="number" id="summarize-topk" value="10" min="1" max="50">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="summarize-length">Max Words</label>
+                            <input type="number" id="summarize-length" value="500" min="50" max="2000">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Generate Summary</span>
+                            <span class="btn-spinner hidden" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                </div>
+
+                <div id="summarize-results" class="results hidden" aria-live="polite">
+                    <div class="card glass result-card">
+                        <div class="result-header">
+                            <h2>Summary</h2>
+                            <div class="metrics" id="summarize-metrics"></div>
+                        </div>
+                        <div class="metrics" id="summarize-stats"></div>
+                        <div class="result-content" id="summarize-content"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container" role="alert" aria-live="assertive"></div>
+
+    <!-- Application Script -->
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

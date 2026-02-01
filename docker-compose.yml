@@ -1,0 +1,60 @@
+# =============================================================================
+# EndeeSync Docker Compose
+# =============================================================================
+# Run: docker compose up --build
+
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend API
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: endeesync-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=EndeeSync
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - ENDEE_DB_PATH=/app/data/endee
+      - ENDEE_COLLECTION_NAME=memories
+      - LLM_PROVIDER=openai
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=gpt-4o-mini
+    volumes:
+      - endee_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5).raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Frontend UI
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: endeesync-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  endee_data:
+    driver: local
