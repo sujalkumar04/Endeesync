@@ -89,7 +89,7 @@ A local-first RAG-based semantic memory engine built with the Endee vector datab
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/yourusername/EndeeSync.git
+git clone https://github.com/sujalkumar04/Endeesync.git
 cd EndeeSync/backend
 ```
 
